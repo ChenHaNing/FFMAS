@@ -105,3 +105,4 @@ python -m pytest
 
 - 不要提交真实密钥到仓库
 - `.env`、运行日志与输出工件应保持本地化
+- 具体流程见 `SECURITY.md`
