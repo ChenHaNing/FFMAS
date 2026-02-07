@@ -1,4 +1,4 @@
-.PHONY: setup test run-web run-streamlit
+.PHONY: setup test run-web
 
 setup:
 	python3 -m venv .venv
@@ -9,6 +9,3 @@ test:
 
 run-web:
 	uvicorn src.web_app:app --reload
-
-run-streamlit:
-	streamlit run app.py

@@ -48,12 +48,6 @@ uvicorn src.web_app:app --reload
 
 打开 [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
-Streamlit 原型（可选）：
-
-```bash
-streamlit run app.py
-```
-
 ## API
 
 - `POST /api/run`
@@ -71,7 +65,6 @@ python -m pytest
 
 ```text
 .
-├── app.py
 ├── src/
 ├── tests/
 ├── templates/
