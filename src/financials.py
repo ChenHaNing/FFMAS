@@ -599,7 +599,7 @@ def _sec_enabled() -> bool:
 def _sec_headers() -> Dict[str, str]:
     user_agent = os.getenv(
         "SEC_USER_AGENT",
-        "FFMAS Research Bot/1.0 (contact: research@example.com)",
+        "ForenSight Research Bot/1.0 (contact: research@example.com)",
     )
     return {
         "User-Agent": user_agent,

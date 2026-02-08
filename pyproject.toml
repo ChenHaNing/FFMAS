@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ffmas"
+name = "forensight-fraud"
 version = "0.1.0"
-description = "Financial Fraud Multi-Agent System prototype"
+description = "ForenSight: Multi-agent forensic reasoning prototype for financial fraud analysis"
 readme = "README.md"
 requires-python = ">=3.9"
 

@@ -67,7 +67,7 @@ class RunRequest(BaseModel):
 def create_app(
     llm_factory: Optional[Callable[[str, str, str, str], Any]] = None
 ) -> FastAPI:
-    app = FastAPI(title="FFMAS Prototype")
+    app = FastAPI(title="ForenSight")
 
     use_default_factory = llm_factory is None
 

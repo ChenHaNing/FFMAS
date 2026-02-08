@@ -1,1 +1,1 @@
-"""FFMAS prototype package."""
+"""ForenSight package."""
