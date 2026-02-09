@@ -1,4 +1,5 @@
 from pathlib import Path
+import inspect
 
 from src.financials import compute_financial_metrics, extract_financials_with_fallback
 
@@ -305,7 +306,7 @@ def test_load_ratio_calculator_falls_back_to_local_module(monkeypatch):
     from src import financials
 
     monkeypatch.setenv("FINANCIAL_RATIO_CALCULATOR_PATH", "/tmp/not-exist-ratio-calc.py")
-    monkeypatch.setattr(financials, "SKILL_CALCULATOR_PATH", Path("/tmp/not-exist-skill-calc.py"))
+    monkeypatch.setattr(financials, "_default_skill_calculator_path", lambda: Path("/tmp/not-exist-skill-calc.py"))
 
     ratio_cls = financials._load_ratio_calculator()
     calculator = ratio_cls(
@@ -318,3 +319,18 @@ def test_load_ratio_calculator_falls_back_to_local_module(monkeypatch):
     )
     metrics = calculator.calculate_all_ratios()
     assert "profitability" in metrics
+
+
+def test_financials_source_has_no_user_specific_absolute_path():
+    from src import financials
+
+    source = inspect.getsource(financials)
+    assert "/Users/han/" not in source
+
+
+def test_default_skill_calculator_path_prefers_codex_home(monkeypatch):
+    from src import financials
+
+    monkeypatch.setenv("CODEX_HOME", "/tmp/codex-home")
+    expected = Path("/tmp/codex-home/skills/analyzing-financial-statements/calculate_ratios.py")
+    assert financials._default_skill_calculator_path() == expected

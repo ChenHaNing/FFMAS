@@ -241,6 +241,7 @@ def test_index_does_not_show_sample_toggle():
     resp = client.get("/")
     assert resp.status_code == 200
     assert "使用样本文档" not in resp.text
+    assert "API Key 从环境变量读取，不在前端显示。" not in resp.text
 
 
 def test_frontend_report_visual_hooks_present():

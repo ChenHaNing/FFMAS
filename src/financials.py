@@ -10,10 +10,17 @@ from datetime import datetime
 import requests
 
 
-SKILL_CALCULATOR_PATH = Path(
-    "/Users/han/.codex/skills/analyzing-financial-statements/calculate_ratios.py"
-)
 RATIO_CALCULATOR_PATH_ENV = "FINANCIAL_RATIO_CALCULATOR_PATH"
+SKILL_CALCULATOR_REL_PATH = Path("skills/analyzing-financial-statements/calculate_ratios.py")
+
+
+def _default_skill_calculator_path() -> Path:
+    codex_home = os.getenv("CODEX_HOME", "").strip()
+    if codex_home:
+        base = Path(codex_home).expanduser()
+    else:
+        base = Path.home() / ".codex"
+    return base / SKILL_CALCULATOR_REL_PATH
 
 
 FIN_STATEMENT_SCHEMA = {
@@ -106,7 +113,7 @@ def _load_ratio_calculator():
     env_path = os.getenv(RATIO_CALCULATOR_PATH_ENV, "").strip()
     if env_path:
         candidates.append(Path(env_path).expanduser())
-    candidates.append(SKILL_CALCULATOR_PATH)
+    candidates.append(_default_skill_calculator_path())
 
     load_errors: List[str] = []
     for path in candidates:

@@ -1,48 +1,63 @@
-# ForenSight（证镜）
+# ForenSight（证镜）财务分析与风险研判系统
 
-面向财务舞弊研判的多智能体分析系统。  
-核心链路是：`信息汇聚 -> 结构化底稿(workpaper) -> 多智能体研判 -> 裁决报告`。
+ForenSight 是一个面向财报文本的多智能体（Multi-Agent）分析原型，用于输出**结构化舞弊风险研判结果**。系统会从文档中抽取财务信息、构建工作底稿，交由多个专题智能体并行分析，最后由裁决智能体汇总为最终风险结论。
 
-这个项目更偏“证据驱动研判引擎”，而不是纯问答：每次运行都会落地完整中间产物，便于复盘和审计。
+## 核心能力
 
-## 这个项目能做什么
+- 多智能体协同分析：`base + fraud_type_A~F + defense(可选)`
+- 结构化输出：`workpaper.json`、各智能体报告、`final_report.json`
+- 异步流式可视化：Web 端按阶段展示推理进度和步骤输出
+- 财报文件上传：支持 `.odf` / `.odt` / `.pdf`
+- 可选外部检索：配置 Tavily 后支持自主补充证据（ReAct 风格重试）
 
-- 输入财报文本或上传文档（`PDF/ODF/ODT`）
-- 自动提取财务字段并计算关键指标（盈利、流动性、杠杆、效率、估值）
-- 生成结构化工作底稿 `workpaper.json`
-- 并发执行 8 类智能体：
-  - `base`（基础风险）
-  - `fraud_type_A ~ fraud_type_F`（六类专项风险）
-  - `defense`（辩护/复核，支持开关）
-- 触发自主外部补充调查（ReAct，最多两轮）
-- 输出最终裁决 `final_report.json`（总体风险、采纳点、驳回点、理由、建议）
+## 系统流程
 
-## 处理流程（与代码一致）
+```mermaid
+flowchart LR
+    A[上传财报或输入文本] --> B[摘要与公司识别]
+    B --> C[财务字段抽取与指标计算]
+    C --> D[构建工作底稿 Workpaper]
+    D --> E[多智能体并行分析]
+    E --> F[裁决智能体汇总]
+    F --> G[最终风险报告与建议]
+```
 
-1. 信息汇聚：从文本/上传文档提取可分析内容  
-2. 财务结构化：抽取报表字段并补全关键缺口（可结合 SEC / Tavily）  
-3. 底稿构建：生成 `workpaper` + `context_pack` + `context_capsule`  
-4. 多智能体分析：基于底稿执行 `base + A~F (+ defense)`  
-5. 裁决输出：聚合智能体报告生成 `final_report`  
-6. 落盘与追踪：写入 `outputs/run_xxx/` 下的所有阶段文件
+## 技术栈
 
-## 架构与技术栈
+- 后端：FastAPI + Uvicorn
+- 模型调用：DeepSeek Chat Completions（OpenAI-compatible）
+- 文档解析：`pypdf` + ODF(XML) 提取
+- 前端：Jinja2 模板 + 原生 JS/CSS
+- 测试：Pytest
 
-- 后端：FastAPI（`src/web_app.py`）
-- 编排：`src/orchestrator.py` / `src/agents.py`
-- 文档解析：`pypdf` + ODF(XML) 解析
-- 前端：Jinja2 + 原生 JS/CSS
-- LLM：当前仅支持 DeepSeek（配置中固定）
-- 测试：pytest
+## 项目结构
+
+```text
+src/
+  web_app.py         # FastAPI 应用与异步运行管理
+  orchestrator.py    # 主流程编排（摘要/财务抽取/工作底稿/agent/最终裁决）
+  agents.py          # 各风险智能体与并发执行
+  workpaper.py       # 工作底稿构建与补全
+  financials.py      # 财务字段抽取、回退策略、比率计算
+  llm_client.py      # LLM 调用封装（当前 deepseek）
+  tavily_client.py   # 可选联网检索
+  pdf_loader.py      # PDF 分块与关键文本抽取
+  summarizer.py      # 文本摘要
+  run_logger.py      # 运行日志
+
+templates/           # Web 页面模板
+static/              # 前端脚本与样式
+outputs/             # 每次运行产物（git 忽略）
+tests/               # 测试用例
+```
 
 ## 快速开始
 
-### 1) 环境准备
+### 1) 环境要求
 
-- Python `>= 3.9`
-- DeepSeek API Key
+- Python >= 3.9
 
-### 2) 安装
+### 2) 安装依赖
 
 ```bash
 python3 -m venv .venv
@@ -51,171 +66,162 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 3) 配置
+或使用 Makefile：
+
+```bash
+make setup
+```
+
+### 3) 配置环境变量
 
 ```bash
 cp .env.example .env
 ```
 
-必填：
+至少需要配置：
 
-- `LLM_API_KEY`
+- `LLM_API_KEY=your_deepseek_api_key`
 
-建议确认：
+可选配置：
 
-- `LLM_PROVIDER=deepseek`
-- `LLM_MODEL_NAME=deepseek-chat`（或 `deepseek-reasoner`）
-- `LLM_BASE_URL=https://api.deepseek.com`
-
-可选：
-
-- `TAVILY_API_KEY`（外部联网检索）
-- `AGENT_MAX_CONCURRENCY`（默认 `4`，建议 `2-8`）
-- `LLM_TIMEOUT_SECONDS`、`LLM_MAX_RETRIES`
+| 变量 | 说明 | 默认值 |
+|---|---|---|
+| `LLM_PROVIDER` | 当前固定 deepseek | `deepseek` |
+| `LLM_MODEL_NAME` | 模型名 | `deepseek-chat` |
+| `LLM_BASE_URL` | API 基础地址 | `https://api.deepseek.com` |
+| `LLM_TIMEOUT_SECONDS` | 请求超时秒数 | `90` |
+| `LLM_MAX_RETRIES` | LLM 重试次数 | `2` |
+| `AGENT_MAX_CONCURRENCY` | 智能体并发数（代码会限制在 1~16） | `4` |
+| `TAVILY_API_KEY` | 外部检索 API（可选） | 空 |
+| `DEBUG` | 调试开关 | `false` |
 
 ### 4) 启动服务
 
 ```bash
-uvicorn src.web_app:app --reload
-```
-
-打开：`http://127.0.0.1:8000`
-
-## API 说明
-
-### 1) 上传财报（可选）
-
-- `POST /api/upload-report`
-- 支持：`.pdf` / `.odf` / `.odt`
-- 返回：`report_id`
-
-### 2) 发起分析
-
-- `POST /api/run?mode=sync|async`
-- `mode=sync`：直接返回完整结果
-- `mode=async`：返回 `run_id`，再轮询状态
-
-请求体（文本模式）：
-
-```json
-{
-  "input_texts": ["...财报正文或摘要..."],
-  "enable_defense": true
-}
-```
-
-请求体（上传文件模式）：
-
-```json
-{
-  "uploaded_report_id": "xxxx",
-  "enable_defense": true
-}
-```
-
-补充字段：
-
-- `model`：可覆盖模型名（仅接受 `deepseek*`）
-- `base_url`：可覆盖 API Base URL
-
-### 3) 查询异步状态
-
-- `GET /api/status?run_id=<id>`
-- 状态字段：`running | completed | failed`
-
-## 输出文件（每次运行）
-
-目录：`outputs/run_<timestamp>_<id>/`
-
-- `workpaper.json`：结构化底稿
-- `agent_reports/*.json`：每个智能体独立报告
-- `final_report.json`：最终裁决
-- `run.log`：阶段日志（summary、financial_data、workpaper、agent:*、final_report）
-
-## 检索机制说明（不是向量 RAG）
-
-本项目不是“向量库召回式 RAG”。当前是：
-
-- 外部搜索增强（Tavily API）
-- 外部结构化数据补全（SEC CompanyFacts）
-- 搜索结果以文本摘要方式拼接到 prompt，供模型参考
-
-也就是说，更接近 `Search-Augmented Generation`。
-
-## 配置项
-
-| 变量 | 必填 | 默认值 | 说明 |
-|---|---|---|---|
-| `LLM_PROVIDER` | 否 | `deepseek` | 当前仅 deepseek 生效 |
-| `LLM_MODEL_NAME` | 否 | `deepseek-chat` | 模型名称 |
-| `LLM_API_KEY` | 是 | - | DeepSeek API Key |
-| `LLM_BASE_URL` | 否 | `https://api.deepseek.com` | DeepSeek API 地址 |
-| `LLM_TIMEOUT_SECONDS` | 否 | `90` | LLM 请求超时（秒） |
-| `LLM_MAX_RETRIES` | 否 | `2` | LLM 请求重试次数 |
-| `AGENT_MAX_CONCURRENCY` | 否 | `4` | 智能体并发上限（1-16） |
-| `TAVILY_API_KEY` | 否 | 空 | 联网检索增强 |
-| `DEBUG` | 否 | `false` | 调试开关 |
-
-## 开发命令
-
-```bash
-make setup
-make test
 make run-web
 ```
 
 等价命令：
 
-- `make setup`：创建虚拟环境并安装依赖
-- `make test`：运行 pytest
-- `make run-web`：启动 Web 服务
-
-## 项目结构
-
-```text
-.
-├── src/
-│   ├── web_app.py        # API入口、异步状态与流式阶段更新
-│   ├── orchestrator.py   # 同步主流程编排
-│   ├── agents.py         # 多智能体执行、ReAct补充检索
-│   ├── workpaper.py      # 底稿生成、上下文胶囊、底稿补全
-│   ├── financials.py     # 财务抽取、SEC/Tavily补全、指标计算
-│   ├── tavily_client.py  # Tavily搜索封装
-│   └── ...
-├── templates/            # 前端模板
-├── static/               # 前端脚本与样式
-├── tests/                # 单元测试
-├── outputs/              # 运行产物
-└── README.md
+```bash
+uvicorn src.web_app:app --reload
 ```
+
+打开浏览器访问：`http://127.0.0.1:8000`
+
+## 使用方式
+
+### Web 端
+
+1. 在侧栏确认模型与 Base URL（Provider 固定为 DeepSeek）。
+2. 上传财报文件（`.odf/.odt/.pdf`）。
+3. 点击“运行分析”，查看流程画布、各智能体输出和最终报告。
+
+提示：若未配置 `LLM_API_KEY`，前端会禁用运行按钮。
+
+### API
+
+#### 1) 上传财报
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/upload-report" \
+  -F "file=@/absolute/path/to/report.pdf"
+```
+
+成功后返回 `report_id`。
+
+#### 2) 同步运行（直接返回完整结果）
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/run?mode=sync" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uploaded_report_id": "<report_id>",
+    "enable_defense": true,
+    "model": "deepseek-chat",
+    "base_url": "https://api.deepseek.com"
+  }'
+```
+
+#### 3) 异步运行（轮询状态）
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/run?mode=async" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input_texts": ["示例财务文本..."],
+    "enable_defense": true
+  }'
+```
+
+返回 `run_id` 后查询：
+
+```bash
+curl "http://127.0.0.1:8000/api/status?run_id=<run_id>"
+```
+
+## 前端界面示例
+
+仓库内放置了一个示例界面图（可替换为你的实际截图）：
+
+![ForenSight 前端示例界面](docs/images/frontend-example.svg)
+
+## 输出说明
+
+每次运行会生成独立目录：`outputs/run_<timestamp_ns>_<id>/`
+
+- `run.log`：步骤级日志（JSONL）
+- `workpaper.json`：结构化工作底稿
+- `agent_reports/*.json`：各智能体输出
+- `final_report.json`：最终综合结论
+
+`final_report.json` 关键字段：
+
+- `overall_risk_level`
+- `accepted_points`
+- `rejected_points`
+- `rationale`
+- `uncertainty`
+- `suggestions`
+
+## 测试
+
+运行全部测试：
+
+```bash
+make test
+```
+
+或：
+
+```bash
+python -m pytest
+```
+
+## 开源与协作
+
+- 许可证：`MIT`（见 `LICENSE`）
+- 安全策略：见 `SECURITY.md`
+- 贡献指南：见 `CONTRIBUTING.md`
+- 致谢说明：见 `ACKNOWLEDGEMENTS.md`
+
+## 致谢与灵感来源
+
+感谢深圳证券交易所财务舞弊监管 AI 大模型课题组发布论文《AI大模型驱动的智能博弈财务舞弊识别系统构建》，其公开的研究思路与架构对本项目有重要启发。
+
+说明：
+
+- 该论文未公开源码。
+- 本仓库为基于公开论文思想与架构的独立学习型实现（复刻），代码由本项目自行实现并开源。
+- 如需引用论文文字、图表或大段内容，请遵循原论文的版权与引用规范。
 
 ## 常见问题
 
-### 1) 为什么有时 Tavily 看起来“没结果”
+- 报错 `Missing API key`：请在 `.env` 配置 `LLM_API_KEY`。
+- 报错 `No input texts or uploaded report`：`/api/run` 必须提供 `input_texts` 或 `uploaded_report_id`。
+- 报错“当前仅支持 DeepSeek 模型”：后端目前只允许 `deepseek*` 模型名。
+- 未配置 Tavily：系统仍可运行，但自主外部调查会被跳过。
 
-当前 `src/tavily_client.py` 在请求异常时会直接返回空列表。  
-如果 Tavily 账号超额、鉴权失败或网络异常，前端只会看到“无检索结果”。
+## 说明
 
-建议检查：
-
-- `TAVILY_API_KEY` 是否有效
-- Tavily 账户是否有可用额度
-- 出网网络是否可访问 `https://api.tavily.com`
-
-### 2) 置信度为什么容易重复（比如都 0.85）
-
-`confidence` 目前由 LLM 直接生成，没有程序化校准公式。  
-因此会出现同批智能体给出接近分数的情况。
-
-## 已知限制
-
-- 结论质量高度依赖输入文本质量与完整度
-- 外部检索质量受 Tavily 命中率与额度限制
-- 当前 provider 固定为 DeepSeek
-
-## 后续可优化方向
-
-- 给 `confidence` 增加可解释的程序化打分（证据数量、冲突度、检索覆盖度）
-- 增加证据定位（页码/段落索引）
-- 支持更多 LLM provider（OpenAI/Anthropic 等）
-- 建立稳定评测集与回归基线
+本项目为研究/原型用途，输出结果仅用于辅助分析，不构成审计或投资建议。
