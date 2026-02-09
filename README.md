@@ -22,6 +22,10 @@ flowchart LR
     F --> G[最终风险报告与建议]
 ```
 
+系统架构展示：
+
+![ForenSight 系统架构展示](docs/images/架构展示.png)
+
 ## 技术栈
 
 - 后端：FastAPI + Uvicorn
@@ -162,9 +166,9 @@ curl "http://127.0.0.1:8000/api/status?run_id=<run_id>"
 
 ## 前端界面示例
 
-仓库内放置了一个示例界面图（可替换为你的实际截图）：
+前端展示截图：
 
-![ForenSight 前端示例界面](docs/images/frontend-example.svg)
+![ForenSight 前端展示](docs/images/前端展示.png)
 
 ## 输出说明
 
