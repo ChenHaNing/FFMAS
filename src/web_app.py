@@ -59,7 +59,6 @@ class RunRequest(BaseModel):
     input_texts: Optional[List[str]] = None
     uploaded_report_id: Optional[str] = None
     enable_defense: bool = True
-    provider: Optional[str] = None
     model: Optional[str] = None
     base_url: Optional[str] = None
 
@@ -89,9 +88,9 @@ def create_app(
     def index(request: Request):
         config = load_config()
         return templates.TemplateResponse(
+            request,
             "index.html",
             {
-                "request": request,
                 "defaults": {
                     "provider": config.llm_provider,
                     "model": config.llm_model_name,
@@ -104,8 +103,15 @@ def create_app(
     @app.post("/api/run")
     def run_analysis(payload: RunRequest, mode: str = "async"):
         config = load_config()
-        provider = payload.provider or config.llm_provider
-        model = payload.model or config.llm_model_name
+        provider = "deepseek"
+        requested_model = (payload.model or "").strip()
+        model = (requested_model or config.llm_model_name or "deepseek-chat").strip()
+        if not model:
+            model = "deepseek-chat"
+        if not model.lower().startswith("deepseek"):
+            if requested_model:
+                raise HTTPException(status_code=400, detail="当前仅支持 DeepSeek 模型")
+            model = "deepseek-chat"
         api_key = config.llm_api_key
         base_url = payload.base_url or config.llm_base_url
 

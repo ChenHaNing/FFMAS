@@ -7,7 +7,6 @@ const downloadWorkpaper = document.getElementById('download-workpaper');
 const reportFileInput = document.getElementById('report-file');
 const uploadStatusEl = document.getElementById('upload-status');
 const hasKey = document.body.dataset.hasKey === 'true';
-const providerEl = document.getElementById('provider');
 const modelEl = document.getElementById('model');
 const baseUrlEl = document.getElementById('base_url');
 
@@ -46,19 +45,9 @@ const FRAUD_AGENTS = [
   { key: 'fraud_type_E', title: '资金往来与流动性分析' },
   { key: 'fraud_type_F', title: '特殊行业/业务模式分析' },
 ];
-const PROVIDER_PRESETS = {
-  zhipu: {
-    models: ['GLM-4.7', 'GLM-4.7-Flash', 'GLM-4-Flash'],
-    baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
-  },
-  minimax: {
-    models: ['MiniMax-M2.1'],
-    baseUrl: 'https://api.minimaxi.com/anthropic',
-  },
-  deepseek: {
-    models: ['deepseek-chat', 'deepseek-reasoner'],
-    baseUrl: 'https://api.deepseek.com',
-  },
+const DEEPSEEK_PRESET = {
+  models: ['deepseek-chat', 'deepseek-reasoner'],
+  baseUrl: 'https://api.deepseek.com',
 };
 const renderCache = new Map();
 let uploadedReportId = null;
@@ -144,20 +133,10 @@ function setTraceState(step, state) {
   }
 }
 
-function normalizeProvider(provider) {
-  const normalized = String(provider || '')
-    .trim()
-    .toLowerCase();
-  return PROVIDER_PRESETS[normalized] ? normalized : 'minimax';
-}
+function syncDeepSeekPresetUI({ keepModel = false, keepBaseUrl = false } = {}) {
+  if (!modelEl || !baseUrlEl) return;
 
-function syncProviderPresetUI({ keepModel = false, keepBaseUrl = false } = {}) {
-  if (!providerEl || !modelEl || !baseUrlEl) return;
-
-  const provider = normalizeProvider(providerEl.value);
-  providerEl.value = provider;
-  const preset = PROVIDER_PRESETS[provider];
-
+  const preset = DEEPSEEK_PRESET;
   const currentModel = String(modelEl.value || '').trim();
   const candidateModels = [...preset.models];
   const preferredModel = keepModel ? currentModel : '';
@@ -554,7 +533,7 @@ async function runAnalysis() {
 
   try {
     const payload = {
-      provider: providerEl.value,
+      provider: 'deepseek',
       model: modelEl.value,
       base_url: baseUrlEl.value,
       enable_defense: document.getElementById('enable_defense').checked,
@@ -735,9 +714,8 @@ if (!hasKey) {
   runBtn.textContent = '请先配置 API Key';
   setStatus('未配置');
 } else {
-  if (providerEl && modelEl && baseUrlEl) {
-    syncProviderPresetUI({ keepModel: true, keepBaseUrl: true });
-    providerEl.addEventListener('change', () => syncProviderPresetUI());
+  if (modelEl && baseUrlEl) {
+    syncDeepSeekPresetUI({ keepModel: true, keepBaseUrl: true });
   }
   if (reportFileInput && uploadStatusEl) {
     reportFileInput.addEventListener('change', () => {

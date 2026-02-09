@@ -270,7 +270,7 @@ def test_frontend_report_visual_hooks_present():
     assert "function formatReactAttempts" in js_text
 
 
-def test_frontend_provider_model_selector_present():
+def test_frontend_model_selector_deepseek_only():
     from src.web_app import create_app
 
     app = create_app(llm_factory=lambda *_args, **_kwargs: FakeLLM(_build_fake_responses()))
@@ -279,17 +279,16 @@ def test_frontend_provider_model_selector_present():
     resp = client.get("/")
     assert resp.status_code == 200
     html = resp.text
-    assert '<select id="provider"' in html
-    assert '<option value="zhipu"' in html
-    assert '<option value="minimax"' in html
-    assert '<option value="deepseek"' in html
+    assert '<select id="provider"' not in html
+    assert "LLM Provider（固定）" in html
+    assert "deepseek" in html
     assert '<select id="model"' in html
 
     root = Path(__file__).resolve().parents[1]
     js_text = (root / "static" / "app.js").read_text(encoding="utf-8")
-    assert "const PROVIDER_PRESETS =" in js_text
-    assert "https://api.minimaxi.com/anthropic" in js_text
-    assert "function syncProviderPresetUI" in js_text
+    assert "const DEEPSEEK_PRESET =" in js_text
+    assert "https://api.deepseek.com" in js_text
+    assert "function syncDeepSeekPresetUI" in js_text
 
 
 def test_api_run_sync_uses_unique_output_dir_even_same_second(monkeypatch):
