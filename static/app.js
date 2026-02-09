@@ -48,8 +48,12 @@ const FRAUD_AGENTS = [
 ];
 const PROVIDER_PRESETS = {
   zhipu: {
-    models: ['glm-4.7-flash', 'glm-4.7', 'glm-4-flash'],
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    models: ['GLM-4.7', 'GLM-4.7-Flash', 'GLM-4-Flash'],
+    baseUrl: 'https://open.bigmodel.cn/api/coding/paas/v4',
+  },
+  minimax: {
+    models: ['MiniMax-M2.1'],
+    baseUrl: 'https://api.minimaxi.com/anthropic',
   },
   deepseek: {
     models: ['deepseek-chat', 'deepseek-reasoner'],
@@ -144,7 +148,7 @@ function normalizeProvider(provider) {
   const normalized = String(provider || '')
     .trim()
     .toLowerCase();
-  return PROVIDER_PRESETS[normalized] ? normalized : 'zhipu';
+  return PROVIDER_PRESETS[normalized] ? normalized : 'minimax';
 }
 
 function syncProviderPresetUI({ keepModel = false, keepBaseUrl = false } = {}) {

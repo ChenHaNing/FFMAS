@@ -281,12 +281,14 @@ def test_frontend_provider_model_selector_present():
     html = resp.text
     assert '<select id="provider"' in html
     assert '<option value="zhipu"' in html
+    assert '<option value="minimax"' in html
     assert '<option value="deepseek"' in html
     assert '<select id="model"' in html
 
     root = Path(__file__).resolve().parents[1]
     js_text = (root / "static" / "app.js").read_text(encoding="utf-8")
     assert "const PROVIDER_PRESETS =" in js_text
+    assert "https://api.minimaxi.com/anthropic" in js_text
     assert "function syncProviderPresetUI" in js_text
 
 

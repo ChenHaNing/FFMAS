@@ -36,7 +36,7 @@ ForenSight 是一个面向财务舞弊研判的多智能体证据推理原型系
 - 后端：FastAPI
 - 模板与前端：Jinja2 + 原生 JS/CSS
 - 文档解析：pypdf + ODF(XML) 解析
-- LLM 调用：支持 DeepSeek 与 Zhipu Chat 接口
+- LLM 调用：支持 DeepSeek 与 Anthropic 兼容接口（Zhipu / MiniMax）
 - 测试：pytest
 
 ## 快速开始
@@ -44,7 +44,7 @@ ForenSight 是一个面向财务舞弊研判的多智能体证据推理原型系
 ### 1) 环境要求
 
 - Python `>= 3.9`
-- 可用的 LLM API Key（DeepSeek 或 Zhipu）
+- 可用的 LLM API Key（DeepSeek / Zhipu / MiniMax）
 
 ### 2) 安装依赖
 
@@ -65,11 +65,17 @@ cp .env.example .env
 
 - `LLM_API_KEY`
 
-通常同时确认（默认 Zhipu）：
+通常同时确认（默认 MiniMax）：
+
+- `LLM_PROVIDER=minimax`
+- `LLM_MODEL_NAME=MiniMax-M2.1`
+- `LLM_BASE_URL=https://api.minimaxi.com/anthropic`
+
+如果使用 Zhipu（Anthropic 兼容）：
 
 - `LLM_PROVIDER=zhipu`
-- `LLM_MODEL_NAME=glm-4.7-flash`
-- `LLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4`
+- `LLM_MODEL_NAME=GLM-4.7`
+- `LLM_BASE_URL=https://open.bigmodel.cn/api/coding/paas/v4`
 
 如果使用 DeepSeek：
 
@@ -142,10 +148,10 @@ uvicorn src.web_app:app --reload
 
 | 变量 | 必填 | 默认值 | 说明 |
 |---|---|---|---|
-| `LLM_PROVIDER` | 否 | `zhipu` | LLM 提供方（`zhipu` / `deepseek`） |
-| `LLM_MODEL_NAME` | 否 | `glm-4.7-flash` | 模型名称 |
+| `LLM_PROVIDER` | 否 | `minimax` | LLM 提供方（`minimax` / `zhipu` / `deepseek`） |
+| `LLM_MODEL_NAME` | 否 | `MiniMax-M2.1` | 模型名称 |
 | `LLM_API_KEY` | 是 | - | LLM 鉴权密钥 |
-| `LLM_BASE_URL` | 否 | `https://open.bigmodel.cn/api/paas/v4` | Provider API 基地址 |
+| `LLM_BASE_URL` | 否 | `https://api.minimaxi.com/anthropic` | Provider API 基地址 |
 | `LLM_TIMEOUT_SECONDS` | 否 | `90` | 单次请求超时（秒） |
 | `LLM_MAX_RETRIES` | 否 | `2` | LLM 请求重试次数 |
 | `TAVILY_API_KEY` | 否 | 空 | 外部检索增强（可选） |

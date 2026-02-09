@@ -31,6 +31,7 @@
         <label>LLM Provider</label>
         <select id="provider">
           <option value="zhipu" {% if defaults.provider == "zhipu" %}selected{% endif %}>zhipu</option>
+          <option value="minimax" {% if defaults.provider == "minimax" %}selected{% endif %}>minimax</option>
           <option value="deepseek" {% if defaults.provider == "deepseek" %}selected{% endif %}>deepseek</option>
         </select>
       </div>
